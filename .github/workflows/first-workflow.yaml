@@ -65,6 +65,6 @@ jobs:
 
       - name: Error Step # Intentionally failing step
         run:
-          doesnotexistcommand # This command does NOT exist → step will fail
+          doesnotexistcommandsss # This command does NOT exist → step will fail
           # Useful for testing failure handling
           # Tip: Add 'continue-on-error: true' to ignore failure
