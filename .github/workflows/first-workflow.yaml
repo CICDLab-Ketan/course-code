@@ -1,13 +1,70 @@
-name: First WorkFlow
+# ======================================================
+# GitHub Actions Workflow: Multi-OS & Job Dependencies
+# Purpose: Learn CI/CD basics with parallel jobs, OS runners, and dependencies
+# Author: CICDLab-Ketan | Learning CI/CD Pipelines
+# Trigger: Runs on every push to any branch
+# ======================================================
+name: First WorkFlow - Multi-OS & Dependencies
+
+# ------------------------------------------------------
+# EVENT TRIGGER
+# ------------------------------------------------------
+# This workflow triggers on 'push' events to any branch
+# You can restrict to main: on: push: branches: [ main ]
+# ------------------------------------------------------
 on: [push]
 
+# ------------------------------------------------------
+# JOBS SECTION
+# Define all jobs that run in this workflow
+# ------------------------------------------------------
 jobs:
-  run-shell-commands:
-    runs-on: ubuntu-latest
+  # ====================================================
+  # JOB 1: run-shell-commands (Ubuntu)
+  # Purpose: Run basic shell commands on Linux
+  # ====================================================
+  run-shell-commands: # Unique job ID
+    runs-on: ubuntu-latest # Use latest Ubuntu runner (Linux)
+
+    steps: # List of steps to execute
+      - name: echo a string # Step name shown in GitHub UI
+        run: echo "Hello, World!" # Simple echo command
+
+      - name: multiline command # Step: Run multiple commands
+        run: | # '|' allows multi-line script
+          node -v                   # Print Node.js version
+          npm -v                    # Print npm version
+          echo "Multiline script done!"  # Confirm execution
+
+  # ====================================================
+  # JOB 2: parallel-job-macos (macOS)
+  # Purpose: Run command on macOS runner (parallel to others)
+  # ====================================================
+  parallel-job-macos:
+    runs-on: macos-latest # Use latest macOS runner
     steps:
-      - name: echo a string
-        run: echo "Hello, World!"
-      - name: multiline command
-        run: |
-          node -v
-          npm -v
+      - name: View SW Version # Step: Display macOS system info
+        run: sw_vers # macOS command to show OS version
+
+  # ====================================================
+  # JOB 3: dependent_job (Windows)
+  # Purpose: Runs ONLY after 'run-shell-commands' succeeds
+  # Demonstrates job dependency
+  # ====================================================
+  dependent_job:
+    runs-on: windows-latest # Use Windows runner
+    needs:
+      run-shell-commands # This job WAITS for the Ubuntu job to finish
+      # If 'run-shell-commands' fails, this job is skipped
+
+    steps:
+      - name: echo a string on windows
+        run:
+          Write-Output "This is a dependent job running on Windows!"
+          # PowerShell command to print message
+
+      - name: Error Step # Intentionally failing step
+        run:
+          doesnotexistcommand # This command does NOT exist → step will fail
+          # Useful for testing failure handling
+          # Tip: Add 'continue-on-error: true' to ignore failure
