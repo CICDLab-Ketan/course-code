@@ -1,9 +1,11 @@
 name: Working Dirs & Shells
 on: [push]
+# Workflow-level default: applies to all jobs unless overridden
 defaults:
     run:
         shell: bash
 jobs:
+    # This job inherits the workflow-level default shell (bash)
     working-dir-and-shells-ubuntu:
         runs-on: ubuntu-latest
         steps:
@@ -15,8 +17,10 @@ jobs:
                   echo $GITHUB_REPOSITORY
                   echo $GITHUB_WORKSPACE
 
+    # This job overrides the workflow-level default with pwsh
     working-dir-and-shells-windows:
         runs-on: windows-latest
+        # Job-level default: overrides workflow-level default for this job only
         defaults:
             run:
                 shell: pwsh
@@ -28,13 +32,16 @@ jobs:
                   echo $env:GITHUB_SHA
                   echo $env:GITHUB_REPOSITORY
                   echo $env:GITHUB_WORKSPACE
+
+    # This job uses bash (workflow-level default) with bash commands
     working-dir-and-shells-windows-bash:
         runs-on: windows-latest
         steps:
             - name: Display current working directory and list files
+              # Using bash shell (from workflow default) with bash-compatible commands
               run: |
-                  Get-Location
-                  dir
-                  echo $env:GITHUB_SHA
-                  echo $env:GITHUB_REPOSITORY
-                  echo $env:GITHUB_WORKSPACE
+                  pwd  # bash command for current directory
+                  ls   # bash command to list files
+                  echo $GITHUB_SHA       # bash syntax for environment variables
+                  echo $GITHUB_REPOSITORY
+                  echo $GITHUB_WORKSPACE
