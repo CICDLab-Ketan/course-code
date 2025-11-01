@@ -10,7 +10,7 @@ jobs:
             - name: Checkout repository
               run: |
                   git init
-                  git remote add origin "https://${{secrets.GITHUB_TOKEN}}@github.com/$github.repository.git"
+                  git remote add origin "https://${{secrets.GITHUB_TOKEN}}@github.com/$github_repository.git"
                   git fetch origin
                   git checkout main
             - name: List files after
