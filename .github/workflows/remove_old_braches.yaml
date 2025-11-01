@@ -1,55 +1,87 @@
 name: Cleanup-Old-Branches
+
+# Triggers for this workflow
 on:
     schedule:
+        # Runs automatically every minute (consider changing to less frequent like daily: "0 0 * * *")
         - cron: "0/1 * * * *"
 
+    # Allows this workflow to be called from other workflows or manually
     workflow_call:
         inputs:
+            # How old branches must be before deletion
             date:
                 description: "Delete branches older than this date (e.g., '2 weeks ago')"
                 required: false
                 type: string
                 default: "2 weeks ago"
+
+            # Test mode - shows what would be deleted without actually deleting
             dry_run:
                 description: "Run in dry mode without deleting branches"
                 required: false
                 type: boolean
                 default: false
+
+            # Whether to delete tags associated with deleted branches
             delete_tags:
                 description: "Delete associated tags"
                 required: false
                 type: boolean
                 default: true
+
+            # Minimum number of tags to always keep (won't delete if below this number)
             minimum_tags:
                 description: "Minimum number of tags to keep"
                 required: false
                 type: number
                 default: 5
+
+            # CHANGE 1: Branches that should never be deleted (comma-separated list)
             default_branches:
                 description: "Branches to exclude from deletion"
                 required: false
                 type: string
-                default: "main,develop"
+                default: "main,develop,staging,production" # Protect all important branches
+
+            # Skip branches that have open pull requests
             exclude_open_pr_branches:
                 description: "Exclude branches with open PRs"
                 required: false
                 type: boolean
                 default: true
 
+            # CHANGE 2: Pattern to target only specific branches (feature branches in this case)
+            branch_pattern:
+                description: "Only delete branches matching this pattern"
+                required: false
+                type: string
+                default: "feature/*" # Only target feature/* branches
+
 jobs:
     housekeeping:
-        name: Cleanup old branches
+        name: Cleanup old feature branches
         runs-on: ubuntu-latest
         steps:
+            # Checkout the repository to access branch information
             - name: Checkout repository
               uses: actions/checkout@v4
+
+            # Run the third-party action that handles branch deletion
             - name: Run delete-old-branches-action
               uses: beatlabs/delete-old-branches-action@v0.0.10
               with:
+                  # GitHub token for authentication (automatically provided)
                   repo_token: ${{ github.token }}
+
+                  # Pass all input parameters to the action
                   date: ${{ inputs.date }}
                   dry_run: ${{ inputs.dry_run }}
                   delete_tags: ${{ inputs.delete_tags }}
                   minimum_tags: ${{ inputs.minimum_tags }}
                   default_branches: ${{ inputs.default_branches }}
                   exclude_open_pr_branches: ${{ inputs.exclude_open_pr_branches }}
+
+                  # CHANGE 3: Regex pattern to protect all branches NOT starting with "feature/"
+                  # This ensures only feature/* branches can be deleted
+                  extra_protected_branch_regex: "^(?!feature/).*$" # Negative lookahead: protect anything NOT matching "feature/"
