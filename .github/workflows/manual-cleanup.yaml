@@ -1,0 +1,15 @@
+name: Manual Cleanup Trigger
+on:
+    workflow_dispatch: # Adds manual "Run workflow" button in GitHub UI
+
+jobs:
+    call-cleanup:
+        uses: .github\workflows\remove_old_braches.yaml # Path to your reusable workflow
+        with:
+            # Pass custom values to the inputs
+            date: "1 month ago" # Delete branches older than 1 month
+            dry_run: true # Run in test mode first
+            delete_tags: false # Don't delete tags
+            minimum_tags: 10 # Keep at least 10 tags
+            default_branches: "main,develop,staging" # Protected branches
+            exclude_open_pr_branches: true # Skip branches with open PRs

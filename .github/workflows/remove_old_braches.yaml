@@ -3,85 +3,111 @@ name: Cleanup-Old-Branches
 # Triggers for this workflow
 on:
     schedule:
-        # Runs automatically every minute (consider changing to less frequent like daily: "0 0 * * *")
+        # Runs automatically every minute using cron syntax
+        # Format: minute hour day month day-of-week
+        # "0/1 * * * *" means: every 1 minute, any hour, any day, any month, any day of week
+        # RECOMMENDATION: Change to "0 0 * * *" for daily execution at midnight
         - cron: "0/1 * * * *"
 
-    # Allows this workflow to be called from other workflows or manually
+    # Allows this workflow to be called from other workflows or manually via workflow_dispatch
     workflow_call:
         inputs:
-            # How old branches must be before deletion
+            # Defines how old branches must be before they're eligible for deletion
             date:
                 description: "Delete branches older than this date (e.g., '2 weeks ago')"
                 required: false
                 type: string
-                default: "2 weeks ago"
+                default: "2 weeks ago" # Default: branches not updated in 2+ weeks will be deleted
 
-            # Test mode - shows what would be deleted without actually deleting
+            # Safety feature: test mode to preview what would be deleted without actually deleting
             dry_run:
                 description: "Run in dry mode without deleting branches"
                 required: false
                 type: boolean
-                default: false
+                default: false # Default: false means it WILL delete (set to true for testing)
 
-            # Whether to delete tags associated with deleted branches
+            # Whether to also delete Git tags associated with the deleted branches
             delete_tags:
                 description: "Delete associated tags"
                 required: false
                 type: boolean
-                default: true
+                default: true # Default: tags will be deleted along with branches
 
-            # Minimum number of tags to always keep (won't delete if below this number)
+            # Safety threshold: minimum number of tags that must remain in the repo
             minimum_tags:
                 description: "Minimum number of tags to keep"
                 required: false
                 type: number
-                default: 5
+                default: 5 # Won't delete tags if total count would fall below 5
 
-            # CHANGE 1: Branches that should never be deleted (comma-separated list)
+            # CHANGE 1: Comma-separated list of branches that should NEVER be deleted
+            # These are your permanent/protected branches (main development branches)
             default_branches:
                 description: "Branches to exclude from deletion"
                 required: false
                 type: string
-                default: "main,develop,staging,production" # Protect all important branches
+                default: "main,develop,staging,production" # Protect all critical branches
 
-            # Skip branches that have open pull requests
+            # Prevents deletion of branches that have active pull requests
             exclude_open_pr_branches:
                 description: "Exclude branches with open PRs"
                 required: false
                 type: boolean
-                default: true
+                default: true # Default: branches with open PRs are protected
 
-            # CHANGE 2: Pattern to target only specific branches (feature branches in this case)
+            # CHANGE 2: Glob pattern to specify which branches to target
+            # Only branches matching this pattern will be considered for deletion
             branch_pattern:
                 description: "Only delete branches matching this pattern"
                 required: false
                 type: string
-                default: "feature/*" # Only target feature/* branches
+                default: "feature/*" # Only target feature/* branches (e.g., feature/login, feature/payment)
 
 jobs:
     housekeeping:
         name: Cleanup old feature branches
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-latest # Uses Ubuntu runner for execution
         steps:
-            # Checkout the repository to access branch information
+            # Step 1: Clone the repository to access branch and commit information
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v4 # Official GitHub action to checkout code
 
-            # Run the third-party action that handles branch deletion
+            # Step 2: Execute the branch deletion action with all configured parameters
             - name: Run delete-old-branches-action
-              uses: beatlabs/delete-old-branches-action@v0.0.10
+              uses: beatlabs/delete-old-branches-action@v0.0.10 # Third-party action for branch cleanup
               with:
-                  # GitHub token for authentication (automatically provided)
+                  # Authentication: GitHub token with repo permissions (auto-generated per workflow run)
                   repo_token: ${{ github.token }}
 
-                  # Pass all input parameters to the action
+                  # Date threshold: Branches last updated before this date will be deleted
+                  # Example: if set to "2 weeks ago", only branches not updated in 2+ weeks are deleted
                   date: ${{ inputs.date }}
+
+                  # Dry run mode: If true, shows what WOULD be deleted without actually deleting
+                  # Set to true for testing, false for actual deletion
                   dry_run: ${{ inputs.dry_run }}
+
+                  # Tag deletion: If true, deletes Git tags associated with deleted branches
+                  # Useful for cleaning up release tags on old feature branches
                   delete_tags: ${{ inputs.delete_tags }}
+
+                  # Minimum tag count: Won't delete tags if it would reduce total tags below this number
+                  # Prevents accidentally removing all version tags from the repository
                   minimum_tags: ${{ inputs.minimum_tags }}
+
+                  # Protected branches: Comma-separated list of branches that will NEVER be deleted
+                  # These branches are completely excluded from the cleanup process
                   default_branches: ${{ inputs.default_branches }}
+
+                  # PR protection: If true, branches with open pull requests won't be deleted
+                  # Prevents breaking active development work and code reviews
                   exclude_open_pr_branches: ${{ inputs.exclude_open_pr_branches }}
 
-                  # CHANGE 3: Regex pattern to protect all branches NOT starting with "feature/"
-                  # This ensures only feature/* branches can be deleted
-                  extra_protected_branch_regex: "^(?!feature/).*$" # Negative lookahead: protect anything NOT matching "feature/"
+                  # CHANGE 3: Regex pattern to protect all branches NOT matching "feature/"
+                  # Pattern breakdown:
+                  #   ^ = start of string
+                  #   (?!feature/) = negative lookahead - fails if string starts with "feature/"
+                  #   .* = matches any characters
+                  #   $ = end of string
+                  # Result: All branches EXCEPT feature/* are protected (main, develop, bugfix/*, etc.)
+                  extra_protected_branch_regex: "^(?!feature/).*$"
