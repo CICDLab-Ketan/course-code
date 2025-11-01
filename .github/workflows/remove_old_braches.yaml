@@ -1,0 +1,55 @@
+name: Cleanup-Old-Branches
+on:
+    schedule:
+        - cron: "15 7 * * 1"
+
+    workflow_call:
+        inputs:
+            date:
+                description: "Delete branches older than this date (e.g., '2 weeks ago')"
+                required: false
+                type: string
+                default: "2 weeks ago"
+            dry_run:
+                description: "Run in dry mode without deleting branches"
+                required: false
+                type: boolean
+                default: false
+            delete_tags:
+                description: "Delete associated tags"
+                required: false
+                type: boolean
+                default: true
+            minimum_tags:
+                description: "Minimum number of tags to keep"
+                required: false
+                type: number
+                default: 5
+            default_branches:
+                description: "Branches to exclude from deletion"
+                required: false
+                type: string
+                default: "main,develop"
+            exclude_open_pr_branches:
+                description: "Exclude branches with open PRs"
+                required: false
+                type: boolean
+                default: true
+
+jobs:
+    housekeeping:
+        name: Cleanup old branches
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Run delete-old-branches-action
+              uses: beatlabs/delete-old-branches-action@v0.0.10
+              with:
+                  repo_token: ${{ github.token }}
+                  date: ${{ inputs.date }}
+                  dry_run: ${{ inputs.dry_run }}
+                  delete_tags: ${{ inputs.delete_tags }}
+                  minimum_tags: ${{ inputs.minimum_tags }}
+                  default_branches: ${{ inputs.default_branches }}
+                  exclude_open_pr_branches: ${{ inputs.exclude_open_pr_branches }}
