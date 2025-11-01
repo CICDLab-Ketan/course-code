@@ -110,4 +110,4 @@ jobs:
                   #   .* = matches any characters
                   #   $ = end of string
                   # Result: All branches EXCEPT feature/* are protected (main, develop, bugfix/*, etc.)
-                  extra_protected_branch_regex: "^(?!feature/).*$"
+                  #extra_protected_branch_regex: "^(?!feature/).*$"
