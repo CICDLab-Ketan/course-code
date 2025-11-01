@@ -1,0 +1,29 @@
+name: Repository Events Workflow
+# Triggers on push and pull_request events
+on:
+    push:
+        branches:
+            - main # Triggers on pushes to main branch
+            - "feature/*" # Triggers on pushes to feature/xyz branches (one level)
+            - "feature/**" # Triggers on pushes to feature/xyz/abc branches (multi-level)
+    pull_request:
+        branches:
+            - main # Triggers when PR is opened/updated targeting main branch
+
+jobs:
+    handle-repo-events:
+        runs-on: ubuntu-latest
+        steps:
+            # Display key GitHub context environment variables
+            - name: Display Event Info
+              run: |
+                  echo "Event Name: $GITHUB_EVENT_NAME"        # Type of event (push, pull_request, etc.)
+                  echo "Event Path: $GITHUB_EVENT_PATH"        # Path to event payload JSON file
+                  echo "Repository: $GITHUB_REPOSITORY"        # Repository name (owner/repo)
+                  echo "Ref: $GITHUB_REF"                      # Git ref that triggered the workflow
+                  echo "SHA: $GITHUB_SHA"                      # Commit SHA that triggered the workflow
+                  echo "Actor: $GITHUB_ACTOR"                  # Username of person who triggered the workflow
+
+            # Display the full event payload JSON for debugging
+            - name: Show Event JSON
+              run: cat $GITHUB_EVENT_PATH

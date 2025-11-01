@@ -1,0 +1,21 @@
+name: Workflow Run Information
+# Triggers when another workflow completes
+on:
+    workflow_run:
+        workflows:
+            # Name of the workflow that triggers this one
+            - Repository Events Workflow
+        types:
+            # Only triggers when the other workflow completes
+            - completed
+        branches:
+            # Only triggers if the other workflow ran on main branch
+            - main
+jobs:
+    display-workflow-run-info:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Display Workflow Run Info
+              # BUG FIX: Multi-line run commands need pipe (|) or greater-than (>)
+              run: |
+                  echo "I was triggered by the completion of the workflow: ${{ github.event.workflow_run.name }}"
